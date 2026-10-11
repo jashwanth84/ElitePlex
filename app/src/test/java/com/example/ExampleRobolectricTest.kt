@@ -56,4 +56,38 @@ class ExampleRobolectricTest {
     assertFalse(storage.isInWatchlist("drishyam_conclusion"))
     storage.close()
   }
+
+  @Test
+  fun `verify master catalog artwork URLs are valid HTTPS`() {
+    val allContent = com.example.data.repository.ElitePlexRepository.getAllContent()
+    assertTrue(allContent.isNotEmpty())
+
+    for (item in allContent) {
+      assertTrue("Poster URL for ${item.title} should start with https://", item.posterUrl.startsWith("https://"))
+      assertTrue("Backdrop URL for ${item.title} should start with https://", item.backdropUrl.startsWith("https://"))
+      assertFalse("Poster URL should not be blank", item.posterUrl.isBlank())
+    }
+  }
+
+  @Test
+  fun `verify ElitePlexApiClient normalization logic`() {
+    val testJson = org.json.JSONObject().apply {
+      put("id", "test_123")
+      put("title", "Test Movie")
+      put("poster", "https://image.tmdb.org/t/p/w500/sample.jpg")
+      put("backdrop", "/sample_backdrop.jpg")
+      put("rating", 8.4)
+      put("year", "2024")
+      put("type", "movie")
+    }
+
+    val item = com.example.data.remote.ElitePlexApiClient.parseNormalizedContentItem(testJson)
+    org.junit.Assert.assertNotNull(item)
+    assertEquals("test_123", item!!.id)
+    assertEquals("Test Movie", item.title)
+    assertEquals("https://image.tmdb.org/t/p/w500/sample.jpg", item.posterUrl)
+    assertEquals("https://image.tmdb.org/t/p/w1280/sample_backdrop.jpg", item.backdropUrl)
+    assertEquals(8.4, item.rating, 0.01)
+    assertEquals(2024, item.year)
+  }
 }

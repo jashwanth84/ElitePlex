@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,8 +44,9 @@ fun BrowseMoviesScreen(
 ) {
     val genres = listOf("All", "Action", "Drama", "Thriller", "Sci-Fi", "Romance", "Comedy")
     var selectedGenre by remember { mutableStateOf("All") }
+    val liveCatalog by ElitePlexRepository.liveCatalogFlow.collectAsState()
 
-    val movies = remember(selectedGenre) {
+    val movies = remember(selectedGenre, liveCatalog) {
         ElitePlexRepository.getBrowseMovies(if (selectedGenre == "All") null else selectedGenre)
     }
 

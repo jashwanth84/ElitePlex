@@ -48,9 +48,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import androidx.compose.material3.CircularProgressIndicator
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.data.model.ContentItem
+import com.example.ui.theme.CinemaRed
 import kotlinx.coroutines.delay
 
 @Composable
@@ -91,14 +93,32 @@ fun HeroBanner(
             transitionSpec = { fadeIn() togetherWith fadeOut() },
             label = "hero_backdrop"
         ) { item ->
-            AsyncImage(
+            val backdropTarget = item.backdropUrl.ifBlank { item.posterUrl }
+            SubcomposeAsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(item.backdropUrl)
+                    .data(backdropTarget)
                     .crossfade(true)
                     .build(),
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                loading = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF141420)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = CinemaRed,
+                            strokeWidth = 2.5.dp
+                        )
+                    }
+                },
+                error = {
+                    HeroBackdropFallbackView(item = item)
+                }
             )
         }
 
@@ -265,3 +285,59 @@ fun HeroBanner(
 private fun Modifier.size(sizePair: Pair<androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp>): Modifier {
     return this.width(sizePair.first).height(sizePair.second)
 }
+
+@Composable
+fun HeroBackdropFallbackView(
+    item: ContentItem,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF321422),
+                        Color(0xFF18101E),
+                        Color(0xFF0A0A10)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x33E50914))
+                    .border(1.5.dp, Color(0x66E50914), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = CinemaRed,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = item.title,
+                color = Color.White.copy(alpha = 0.9f),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+

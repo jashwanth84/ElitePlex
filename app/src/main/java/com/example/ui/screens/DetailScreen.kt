@@ -47,13 +47,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.data.model.ContentItem
 import com.example.data.model.ContentType
@@ -97,14 +99,52 @@ fun DetailScreen(
                     .fillMaxWidth()
                     .height(320.dp)
             ) {
-                AsyncImage(
+                val backdropTarget = item.backdropUrl.ifBlank { item.posterUrl }
+                SubcomposeAsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(item.backdropUrl)
+                        .data(backdropTarget)
                         .crossfade(true)
                         .build(),
                     contentDescription = item.title,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    loading = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFF141420)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = CinemaRed,
+                                strokeWidth = 2.5.dp
+                            )
+                        }
+                    },
+                    error = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            Color(0xFF321422),
+                                            Color(0xFF18101E),
+                                            Color(0xFF0A0A10)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Movie,
+                                contentDescription = null,
+                                tint = CinemaRed,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
                 )
 
                 // Gradient
@@ -523,18 +563,45 @@ fun EpisodeItemRow(
         // Thumbnail
         Box(
             modifier = Modifier
-                .size(90.dp, 60.dp)
+                .size(width = 90.dp, height = 60.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF222230))
         ) {
-            AsyncImage(
+            SubcomposeAsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(episode.thumbnailUrl)
                     .crossfade(true)
                     .build(),
                 contentDescription = episode.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                loading = {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color(0xFF20202E)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = CinemaRed,
+                            strokeWidth = 2.dp
+                        )
+                    }
+                },
+                error = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF20202E)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Movie,
+                            contentDescription = null,
+                            tint = Color(0xFF666677),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             )
 
             // Play icon overlay

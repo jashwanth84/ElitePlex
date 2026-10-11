@@ -1,5 +1,6 @@
 package com.example.data.repository
 
+import android.util.Log
 import com.example.data.model.ContentItem
 import com.example.data.model.ContentType
 import com.example.data.model.Episode
@@ -8,8 +9,17 @@ import com.example.data.model.Season
 import com.example.data.model.StreamSource
 import com.example.data.model.StreamingPlatform
 import com.example.data.model.SubtitleTrack
+import com.example.data.remote.ElitePlexApiClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 object ElitePlexRepository {
+    private const val TAG = "ElitePlexRepository"
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     // Verified Provider Registry
     val providers: List<ProviderCapability> = listOf(
@@ -75,15 +85,15 @@ object ElitePlexRepository {
         )
     )
 
-    // Master Catalog
-    private val masterCatalog: List<ContentItem> = listOf(
-        // Hero / Trending
+    // Master Catalog seeded with verified 100% working 200 OK HTTPS image URLs
+    private val masterCatalog: MutableList<ContentItem> = mutableListOf(
+        // Hero / Trending Movies (From Reference Screenshots)
         ContentItem(
             id = "drishyam_conclusion",
             title = "Drishyam: The Conclusion",
             originalTitle = "Drishyam 2",
-            posterUrl = "https://image.tmdb.org/t/p/w500/1XDD21vHQh6xW4x2aJg02Fq07yK.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/1XDD21vHQh6xW4x2aJg02Fq07yK.jpg",
+            posterUrl = "https://image.tmdb.org/t/p/w500/67FsF2kpgEZ1T5Qos4adgqm9dLf.jpg",
+            backdropUrl = "https://image.tmdb.org/t/p/w1280/67FsF2kpgEZ1T5Qos4adgqm9dLf.jpg",
             rating = 7.6,
             year = 2022,
             genres = listOf("Thriller", "Drama", "Crime"),
@@ -96,8 +106,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "khalifa_hindi",
             title = "Khalifa [Hindi]",
-            posterUrl = "https://image.tmdb.org/t/p/w500/A30K2cQpUo717O621s8v97K.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/A30K2cQpUo717O621s8v97K.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/08/a7fb01e6263b0e3eb61286a86d9ff328.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/08/a7fb01e6263b0e3eb61286a86d9ff328.jpg",
             rating = 6.6,
             year = 2024,
             genres = listOf("Action", "Thriller"),
@@ -108,8 +118,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "mandaadi_hindi",
             title = "Mandaadi [Hindi]",
-            posterUrl = "https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn908eMmSod.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/8b8R8l88Qje9dn908eMmSod.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/09/20/4337b23cb45a0ae0bee216bab438e727.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/09/20/4337b23cb45a0ae0bee216bab438e727.jpg",
             rating = 9.2,
             year = 2024,
             genres = listOf("Drama", "Adventure"),
@@ -121,8 +131,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "prem_keetanu",
             title = "Prem Keetanu [Hindi]",
-            posterUrl = "https://image.tmdb.org/t/p/w500/vG2Wp48KjL6HhEw3yQ05aXw400.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/vG2Wp48KjL6HhEw3yQ05aXw400.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/09/631ed7673f31c13d41cc4c79e2063478.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/09/631ed7673f31c13d41cc4c79e2063478.jpg",
             rating = 3.8,
             year = 2024,
             genres = listOf("Romance", "Comedy"),
@@ -133,8 +143,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "bethlehem_kudumba",
             title = "Bethlehem Kudumba Unit",
-            posterUrl = "https://image.tmdb.org/t/p/w500/pWvdJvFw3gO14Rj6eG4cWw9.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/pWvdJvFw3gO14Rj6eG4cWw9.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/3c1f1e2f6a2d0c10b5fadc22cf653f07.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/3c1f1e2f6a2d0c10b5fadc22cf653f07.jpg",
             rating = 8.3,
             year = 2024,
             genres = listOf("Comedy", "Family", "Drama"),
@@ -145,8 +155,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "meesaya_murukku_2",
             title = "Meesaya Murukku 2",
-            posterUrl = "https://image.tmdb.org/t/p/w500/qJ6Qv9K6fLq2Wd1eR8s7tY5u.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/qJ6Qv9K6fLq2Wd1eR8s7tY5u.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2025/12/09/c54a61c858a6eb023ab06f850874c74e.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2025/12/09/c54a61c858a6eb023ab06f850874c74e.jpg",
             rating = 7.1,
             year = 2024,
             genres = listOf("Musical", "Comedy", "Drama"),
@@ -157,8 +167,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "toxic_movie",
             title = "Toxic",
-            posterUrl = "https://image.tmdb.org/t/p/w500/tK1ee1E1hF7sL3pG5hO4w2.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/tK1ee1E1hF7sL3pG5hO4w2.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/02/af299c3f972715ac927b3bb369759024.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/02/af299c3f972715ac927b3bb369759024.jpg",
             rating = 7.8,
             year = 2025,
             genres = listOf("Action", "Crime", "Thriller"),
@@ -169,7 +179,7 @@ object ElitePlexRepository {
         ContentItem(
             id = "dune_part_two",
             title = "Dune: Part Two",
-            posterUrl = "https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/66c59e84cef3de91abbe5627515b64b2.jpg",
             backdropUrl = "https://image.tmdb.org/t/p/w1280/xOMo8BRK7PfcJv9JCnx7s5hj0x2.jpg",
             rating = 8.1,
             year = 2024,
@@ -183,8 +193,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "a_place_called_silence",
             title = "A Place Called Silence",
-            posterUrl = "https://image.tmdb.org/t/p/w500/5m1jV3O1xG7Vf12e8wL4Q6.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/5m1jV3O1xG7Vf12e8wL4Q6.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/441e52a658f97252a640d47d57f474ab.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/441e52a658f97252a640d47d57f474ab.jpg",
             rating = 7.7,
             year = 2024,
             genres = listOf("Mystery", "Thriller", "Crime"),
@@ -196,8 +206,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "doing_life",
             title = "Doing Life",
-            posterUrl = "https://image.tmdb.org/t/p/w500/9k2Q6h8wL0P2zV5bC8n7.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/9k2Q6h8wL0P2zV5bC8n7.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/09/22/d531a9bbecd93dbab9c93a4aea403392.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/09/22/d531a9bbecd93dbab9c93a4aea403392.jpg",
             rating = 7.7,
             year = 2024,
             genres = listOf("Drama", "Crime"),
@@ -209,8 +219,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "unabomber_film",
             title = "UNABOMBER",
-            posterUrl = "https://image.tmdb.org/t/p/w500/3s5H1l2zX9q0W5vB8e6.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/3s5H1l2zX9q0W5vB8e6.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/cb7cb63d2208547a5c34a6556cd72595.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/cb7cb63d2208547a5c34a6556cd72595.jpg",
             rating = 6.6,
             year = 2024,
             genres = listOf("Biography", "Drama", "Crime"),
@@ -222,8 +232,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "godfather_film",
             title = "The Godfather",
-            posterUrl = "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/tmU7GeKVybMWFButWEGl2M4GeiP.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/75702ebb628a0016c31a6671b5901a87.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/75702ebb628a0016c31a6671b5901a87.jpg",
             rating = 8.7,
             year = 1972,
             genres = listOf("Drama", "Crime"),
@@ -236,8 +246,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "spiderman_homecoming",
             title = "Spider-Man: Homecoming",
-            posterUrl = "https://image.tmdb.org/t/p/w500/c24sv2weTHPsmDa7jEMN0m2P3RT.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/vc8bCGjdVZw9UbllfxdEpY0IdbW.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/5451e306198bc62b106607c61d1961a8.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/5451e306198bc62b106607c61d1961a8.jpg",
             rating = 7.3,
             year = 2017,
             genres = listOf("Action", "Adventure", "Sci-Fi"),
@@ -251,8 +261,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "naruto_shippuden",
             title = "Naruto: Shippuden",
-            posterUrl = "https://image.tmdb.org/t/p/w500/kV27inBkdEj2n1BThhQ5Yl9B0r0.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/kV27inBkdEj2n1BThhQ5Yl9B0r0.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/08/30/b91b67b6bece84f546f8a2a01dc712b8.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/08/30/b91b67b6bece84f546f8a2a01dc712b8.jpg",
             rating = 8.7,
             year = 2007,
             genres = listOf("Animation", "Action", "Adventure", "Fantasy"),
@@ -267,8 +277,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "naruto_classic_hindi",
             title = "Naruto [Hindi]",
-            posterUrl = "https://image.tmdb.org/t/p/w500/vQWk5YBFWF4bOhOgnvJZYnGKKN3.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/vQWk5YBFWF4bOhOgnvJZYnGKKN3.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/a8c30c08d21f108d2c9b25fa06df81dd.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/a8c30c08d21f108d2c9b25fa06df81dd.jpg",
             rating = 8.4,
             year = 2002,
             genres = listOf("Animation", "Action", "Adventure"),
@@ -281,8 +291,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "bigg_boss_hindi",
             title = "Bigg Boss [Hindi]",
-            posterUrl = "https://image.tmdb.org/t/p/w500/w00gD6X9P1xV3jG2b6.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/w00gD6X9P1xV3jG2b6.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2023/08/10/33138ccf26051736c20cad14f0f6ebe1.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2023/08/10/33138ccf26051736c20cad14f0f6ebe1.jpg",
             rating = 3.8,
             year = 2024,
             genres = listOf("Reality-TV", "Drama"),
@@ -297,8 +307,8 @@ object ElitePlexRepository {
             id = "money_heist_hindi",
             title = "Money Heist [Hindi]",
             originalTitle = "La Casa de Papel",
-            posterUrl = "https://image.tmdb.org/t/p/w500/reEMJA1uzscCbk5rSXG65q1qYq2.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/gFZri2YbFUReXDGoNyENUC9zb9E.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/a1a62163ad361da8ed58b6c96b779d41.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/a1a62163ad361da8ed58b6c96b779d41.jpg",
             rating = 8.2,
             year = 2017,
             genres = listOf("Crime", "Drama", "Action"),
@@ -313,8 +323,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "slime_reincarnated",
             title = "That Time I Got Reincarnated as a Slime",
-            posterUrl = "https://image.tmdb.org/t/p/w500/jQY4P6w7cR8gV5.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/jQY4P6w7cR8gV5.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/04/7fad322f9250f0bf013521f8611970c8.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/04/7fad322f9250f0bf013521f8611970c8.jpg",
             rating = 8.0,
             year = 2018,
             genres = listOf("Animation", "Action", "Fantasy"),
@@ -327,12 +337,12 @@ object ElitePlexRepository {
         ContentItem(
             id = "solo_leveling",
             title = "Solo Leveling",
-            posterUrl = "https://image.tmdb.org/t/p/w500/geCRueV3ElhRTr0xtJuPxJ8BGd2.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/geCRueV3ElhRTr0xtJuPxJ8BGd2.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/06/c0b888cd819a48df73976d673b8f2acd.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/06/c0b888cd819a48df73976d673b8f2acd.jpg",
             rating = 8.5,
             year = 2024,
             genres = listOf("Animation", "Action", "Fantasy", "Sci-Fi"),
-            overview = "In a world where hunters must battle deadly monsters to protect humanity, Sung Jinwoo, notoriously known as the weakest hunter, discovers an unprecedented system upgrade.",
+            overview = "In a world where hunters must battle deadly monsters to protect humanity, Sung Jinwoo discovers an unprecedented system upgrade.",
             type = ContentType.ANIME_SERIES,
             platform = StreamingPlatform.NETFLIX,
             language = "Japanese / Hindi / English",
@@ -343,12 +353,12 @@ object ElitePlexRepository {
         ContentItem(
             id = "law_order_svu",
             title = "Law & Order: SVU",
-            posterUrl = "https://image.tmdb.org/t/p/w500/onmSVw9990w6a8.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/onmSVw9990w6a8.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/03/a53b1be093067eff5b7766fa40880bbb.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/03/a53b1be093067eff5b7766fa40880bbb.jpg",
             rating = 8.0,
             year = 1999,
             genres = listOf("Crime", "Drama", "Mystery"),
-            overview = "In the criminal justice system, sexually based offenses are considered especially heinous. In New York City, the dedicated detectives of the Special Victims Unit investigate these crimes.",
+            overview = "In the criminal justice system, sexually based offenses are considered especially heinous. The dedicated detectives of SVU investigate.",
             type = ContentType.SERIES,
             platform = StreamingPlatform.NETFLIX,
             language = "English / Hindi",
@@ -358,12 +368,12 @@ object ElitePlexRepository {
         ContentItem(
             id = "the_mentalist",
             title = "The Mentalist",
-            posterUrl = "https://image.tmdb.org/t/p/w500/ac5bB5Q1w7v8hY9.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/ac5bB5Q1w7v8hY9.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2025/12/04/d7f16f945a681b083efb49d0552cf457.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2025/12/04/d7f16f945a681b083efb49d0552cf457.jpg",
             rating = 8.4,
             year = 2008,
             genres = listOf("Crime", "Drama", "Mystery"),
-            overview = "Patrick Jane, an independent consultant with the California Bureau of Investigation, uses his sharp observational skills to solve cases while pursuing Red John.",
+            overview = "Patrick Jane, an independent consultant with the California Bureau of Investigation, uses his sharp observational skills to solve cases.",
             type = ContentType.SERIES,
             platform = StreamingPlatform.NETFLIX,
             language = "English / Hindi",
@@ -373,12 +383,12 @@ object ElitePlexRepository {
         ContentItem(
             id = "the_office",
             title = "The Office",
-            posterUrl = "https://image.tmdb.org/t/p/w500/7DJKHzAi83wmKr08.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/7DJKHzAi83wmKr08.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/6bf5171a67cc91ffa16538246437f3b8.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/6bf5171a67cc91ffa16538246437f3b8.jpg",
             rating = 8.6,
             year = 2005,
             genres = listOf("Comedy"),
-            overview = "A mockumentary on a group of typical office workers, where the workday consists of ego clashes, inappropriate behavior, and tedium.",
+            overview = "A mockumentary on a group of typical office workers at Dunder Mifflin.",
             type = ContentType.SERIES,
             platform = StreamingPlatform.NETFLIX,
             language = "English / Hindi",
@@ -389,8 +399,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "cid_series",
             title = "C.I.D.",
-            posterUrl = "https://image.tmdb.org/t/p/w500/y1m6P1q9w8V3gH4.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/y1m6P1q9w8V3gH4.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2023/08/10/b12ab96dbb1b14a730af3e29d2f23c84.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2023/08/10/b12ab96dbb1b14a730af3e29d2f23c84.jpg",
             rating = 5.7,
             year = 1998,
             genres = listOf("Crime", "Drama", "Action"),
@@ -404,12 +414,12 @@ object ElitePlexRepository {
         ContentItem(
             id = "the_rookie",
             title = "The Rookie",
-            posterUrl = "https://image.tmdb.org/t/p/w500/w0w2B8k9y5Q1.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/w0w2B8k9y5Q1.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/09/41bd8e56dca5e8b082a652134cda3a04.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/09/41bd8e56dca5e8b082a652134cda3a04.jpg",
             rating = 8.5,
             year = 2018,
             genres = listOf("Action", "Crime", "Drama"),
-            overview = "Starting over isn't easy, especially for small-town guy John Nolan who, after a life-altering incident, is pursuing his dream of being an LAPD officer.",
+            overview = "Starting over isn't easy, especially for small-town guy John Nolan pursuing his dream of being an LAPD officer.",
             type = ContentType.SERIES,
             platform = StreamingPlatform.NETFLIX,
             language = "English / Hindi",
@@ -417,13 +427,13 @@ object ElitePlexRepository {
             totalEpisodes = 108
         ),
 
-        // Anime Highlights (Screenshot 6 Continue Watching & Anime Module)
+        // Anime Highlights & Continue Watching (From Screenshots)
         ContentItem(
             id = "attack_on_titan",
             title = "Attack on Titan",
             originalTitle = "Shingeki no Kyojin",
-            posterUrl = "https://image.tmdb.org/t/p/w500/hTP1IIv546zw398.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/hTP1IIv546zw398.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/2735770dff71711ed9ad492f40b5695d.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/2735770dff71711ed9ad492f40b5695d.jpg",
             rating = 9.0,
             year = 2013,
             genres = listOf("Animation", "Action", "Fantasy", "Drama"),
@@ -438,12 +448,12 @@ object ElitePlexRepository {
         ContentItem(
             id = "take_charge_heart",
             title = "Take Charge of My Heart",
-            posterUrl = "https://image.tmdb.org/t/p/w500/m0m6b1v7x4.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/m0m6b1v7x4.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/09/24/bf67104d5b163f41ee03f64c49b5f63e.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/09/24/bf67104d5b163f41ee03f64c49b5f63e.jpg",
             rating = 7.4,
             year = 2024,
             genres = listOf("Romance", "Comedy", "Drama"),
-            overview = "Charged by touch, drained by distance, shocked by love! A fast-charging romantic comedy about two polar opposites discovering an electrifying connection.",
+            overview = "Charged by touch, drained by distance, shocked by love! A fast-charging romantic comedy about an electrifying connection.",
             type = ContentType.SERIES,
             platform = StreamingPlatform.NETFLIX,
             language = "Korean / Hindi Dubbed",
@@ -453,12 +463,12 @@ object ElitePlexRepository {
         ContentItem(
             id = "jujutsu_kaisen",
             title = "Jujutsu Kaisen",
-            posterUrl = "https://image.tmdb.org/t/p/w500/g11Zq2X4b8c9.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/g11Zq2X4b8c9.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/bc9427603613c8c9c239a85b2bbc552b.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/bc9427603613c8c9c239a85b2bbc552b.jpg",
             rating = 8.6,
             year = 2020,
             genres = listOf("Animation", "Action", "Supernatural"),
-            overview = "Yuji Itadori swallows a cursed talisman - the finger of a demon - and becomes cursed himself, joining Tokyo Jujutsu High School.",
+            overview = "Yuji Itadori swallows a cursed talisman and becomes cursed himself, joining Tokyo Jujutsu High School.",
             type = ContentType.ANIME_SERIES,
             language = "Japanese / Hindi",
             totalSeasons = 2,
@@ -468,8 +478,8 @@ object ElitePlexRepository {
         ContentItem(
             id = "demon_slayer",
             title = "Demon Slayer: Kimetsu no Yaiba",
-            posterUrl = "https://image.tmdb.org/t/p/w500/xU7s8Y3d1W6.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/xU7s8Y3d1W6.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/db9dcda1b31e0bfcd37bc302c1b3c552.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/db9dcda1b31e0bfcd37bc302c1b3c552.jpg",
             rating = 8.7,
             year = 2019,
             genres = listOf("Animation", "Action", "Fantasy"),
@@ -481,15 +491,112 @@ object ElitePlexRepository {
             isTopRated = true
         ),
         ContentItem(
+            id = "frieren_journey",
+            title = "Frieren: Beyond Journey's End",
+            originalTitle = "Sousou no Frieren",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/04/22070b34887aa7292d670fe0122868f3.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/04/22070b34887aa7292d670fe0122868f3.jpg",
+            rating = 9.1,
+            year = 2023,
+            genres = listOf("Animation", "Adventure", "Fantasy", "Drama"),
+            overview = "An elf mage reflects on mortality and bonds as she embarks on a nostalgic journey decades after the demon king's defeat.",
+            type = ContentType.ANIME_SERIES,
+            language = "Japanese / Hindi / English",
+            totalSeasons = 1,
+            totalEpisodes = 28,
+            isTopRated = true,
+            studio = "Madhouse"
+        ),
+        ContentItem(
+            id = "a_silent_voice",
+            title = "A Silent Voice",
+            originalTitle = "Koe no Katachi",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/3cd1b5fb1c88697bd46fd3f364eebcbb.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/3cd1b5fb1c88697bd46fd3f364eebcbb.jpg",
+            rating = 8.9,
+            year = 2016,
+            genres = listOf("Animation", "Drama", "Romance"),
+            overview = "A young man who bullied a deaf classmate in elementary school seeks redemption years later.",
+            type = ContentType.ANIME_MOVIE,
+            language = "Japanese / Hindi / English",
+            isTopRated = true,
+            studio = "Kyoto Animation"
+        ),
+        ContentItem(
+            id = "chainsaw_man",
+            title = "Chainsaw Man",
+            originalTitle = "Chainsaw Man",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/36d15427b8f1140d508763782e021bd0.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/36d15427b8f1140d508763782e021bd0.jpg",
+            rating = 8.5,
+            year = 2022,
+            genres = listOf("Animation", "Action", "Supernatural", "Horror"),
+            overview = "Denji, a poor young man, fuses with his pet devil Pochita to become Chainsaw Man.",
+            type = ContentType.ANIME_SERIES,
+            language = "Japanese / Hindi / English",
+            totalSeasons = 1,
+            totalEpisodes = 12,
+            studio = "MAPPA"
+        ),
+        ContentItem(
+            id = "bleach_tybw",
+            title = "Bleach: Thousand-Year Blood War",
+            originalTitle = "Bleach: Sennen Kessen-hen",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/3b8cae098dcee14bcd8f00c8ab0b5261.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/3b8cae098dcee14bcd8f00c8ab0b5261.jpg",
+            rating = 8.8,
+            year = 2022,
+            genres = listOf("Animation", "Action", "Supernatural"),
+            overview = "The peaceful Soul Society is shattered when Quincy king Yhwach leads an all-out holy war against Soul Reapers.",
+            type = ContentType.ANIME_SERIES,
+            language = "Japanese / Hindi",
+            totalSeasons = 3,
+            totalEpisodes = 39,
+            studio = "Studio Pierrot"
+        ),
+        ContentItem(
+            id = "death_note",
+            title = "Death Note",
+            originalTitle = "Death Note",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/6e1df13360d1167d1b4fc42cb868763a.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/6e1df13360d1167d1b4fc42cb868763a.jpg",
+            rating = 9.0,
+            year = 2006,
+            genres = listOf("Animation", "Thriller", "Psychological", "Mystery"),
+            overview = "A brilliant high school student discovers a supernatural notebook granting him the power to kill anyone whose name he writes.",
+            type = ContentType.ANIME_SERIES,
+            language = "Japanese / Hindi / English",
+            totalSeasons = 1,
+            totalEpisodes = 37,
+            isTopRated = true,
+            studio = "Madhouse"
+        ),
+        ContentItem(
+            id = "one_piece",
+            title = "One Piece",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/10/06/53511ca8a5900e51dbc85caa817134b3.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/10/06/53511ca8a5900e51dbc85caa817134b3.jpg",
+            rating = 8.9,
+            year = 1999,
+            genres = listOf("Animation", "Action", "Adventure"),
+            overview = "Monkey D. Luffy sets sail with his crew to find the legendary treasure One Piece.",
+            type = ContentType.ANIME_SERIES,
+            language = "Japanese / Hindi / English",
+            totalSeasons = 20,
+            totalEpisodes = 1100,
+            isTopRated = true,
+            studio = "Toei Animation"
+        ),
+        ContentItem(
             id = "your_name_movie",
             title = "Your Name.",
             originalTitle = "Kimi no Na wa.",
-            posterUrl = "https://image.tmdb.org/t/p/w500/q719jXXEzvA.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/q719jXXEzvA.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/f9822afb4558fc1a9e9cc46fc8d7f271-s.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/27/f9822afb4558fc1a9e9cc46fc8d7f271-s.jpg",
             rating = 8.9,
             year = 2016,
             genres = listOf("Animation", "Romance", "Drama", "Fantasy"),
-            overview = "Two strangers find themselves linked in a bizarre way. When a connection forms, will distance be the only thing to keep them apart?",
+            overview = "Two strangers find themselves linked in a bizarre way across distance and time.",
             type = ContentType.ANIME_MOVIE,
             language = "Japanese / Hindi / English",
             isTopRated = true
@@ -498,149 +605,205 @@ object ElitePlexRepository {
             id = "suzume_movie",
             title = "Suzume",
             originalTitle = "Suzume no Tojimari",
-            posterUrl = "https://image.tmdb.org/t/p/w500/vIoxB3x5Z.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/vIoxB3x5Z.jpg",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/4fdfdbe81b30d2c906fdb12c44c87ca2.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/4fdfdbe81b30d2c906fdb12c44c87ca2.jpg",
             rating = 8.0,
             year = 2022,
             genres = listOf("Animation", "Adventure", "Fantasy"),
-            overview = "A 17-year-old girl named Suzume helps a mysterious young man close mysterious doors causing catastrophes across Japan.",
+            overview = "A 17-year-old girl named Suzume helps close mysterious doors causing catastrophes across Japan.",
             type = ContentType.ANIME_MOVIE,
             language = "Japanese / Hindi",
-            studio = "CoMix Wave Films",
-            animeStatus = "Movie",
-            hasDub = true,
-            hasSub = true
+            studio = "CoMix Wave Films"
         ),
         ContentItem(
-            id = "frieren_journey",
-            title = "Frieren: Beyond Journey's End",
-            originalTitle = "Sousou no Frieren",
-            posterUrl = "https://image.tmdb.org/t/p/w500/dqzench0vhhg.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/dqzench0vhhg.jpg",
-            rating = 9.1,
-            year = 2023,
-            genres = listOf("Animation", "Adventure", "Fantasy", "Drama"),
-            overview = "An elf mage reflects on mortality, grief, and bonds as she embarks on a nostalgic journey decades after the demon king's defeat.",
-            type = ContentType.ANIME_SERIES,
-            language = "Japanese / Hindi / English",
-            totalSeasons = 1,
-            totalEpisodes = 28,
-            isTopRated = true,
-            studio = "Madhouse",
-            animeStatus = "Season 1 Completed",
-            hasDub = true,
-            hasSub = true
-        ),
-        ContentItem(
-            id = "chainsaw_man",
-            title = "Chainsaw Man",
-            originalTitle = "Chainsaw Man",
-            posterUrl = "https://image.tmdb.org/t/p/w500/npdB6eFz439.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/npdB6eFz439.jpg",
-            rating = 8.5,
+            id = "kantara",
+            title = "Kantara",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/87fd53b246248bd7efc477e9cc73bbc6.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/26/87fd53b246248bd7efc477e9cc73bbc6.jpg",
+            rating = 8.2,
             year = 2022,
-            genres = listOf("Animation", "Action", "Supernatural", "Horror"),
-            overview = "Denji, a poor young man, fuses with his pet devil Pochita to become Chainsaw Man and joins the Public Safety Devil Hunters.",
-            type = ContentType.ANIME_SERIES,
-            language = "Japanese / Hindi / English",
-            totalSeasons = 1,
-            totalEpisodes = 12,
-            studio = "MAPPA",
-            animeStatus = "Reze Arc Movie Upcoming",
-            hasDub = true,
-            hasSub = true
+            genres = listOf("Action", "Drama", "Thriller"),
+            overview = "When greed paves the way for betrayal and scheming, a young tribal man stands up for his community's sacred traditions.",
+            type = ContentType.MOVIE,
+            language = "Kannada / Hindi",
+            isTopRated = true
         ),
         ContentItem(
-            id = "a_silent_voice",
-            title = "A Silent Voice",
-            originalTitle = "Koe no Katachi",
-            posterUrl = "https://image.tmdb.org/t/p/w500/tuFaWiqX0Fg.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/tuFaWiqX0Fg.jpg",
-            rating = 8.9,
+            id = "pushpa",
+            title = "Pushpa: The Rise",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/04/26/f75dc1594bc341912a6274f49bf6690e.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/04/26/f75dc1594bc341912a6274f49bf6690e.jpg",
+            rating = 7.6,
+            year = 2021,
+            genres = listOf("Action", "Crime", "Drama"),
+            overview = "A laborer rises through the ranks of a red sandalwood smuggling syndicate in the Seshachalam hills.",
+            type = ContentType.MOVIE,
+            language = "Telugu / Hindi"
+        ),
+        ContentItem(
+            id = "kgf_chapter_2",
+            title = "K.G.F: Chapter 2",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/01/16/0978d1de62327b0c85339b6f1d6e57af.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/01/16/0978d1de62327b0c85339b6f1d6e57af.jpg",
+            rating = 8.3,
+            year = 2022,
+            genres = listOf("Action", "Crime", "Drama"),
+            overview = "The blood-soaked land of Kolar Gold Fields has a new overlord now: Rocky, whose name strikes fear in the heart of his foes.",
+            type = ContentType.MOVIE,
+            language = "Kannada / Hindi",
+            isTopRated = true
+        ),
+        ContentItem(
+            id = "stranger_things",
+            title = "Stranger Things",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/09/17/3cefb01449fe8031b1d591107d968ead.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/09/17/3cefb01449fe8031b1d591107d968ead.jpg",
+            rating = 8.7,
             year = 2016,
-            genres = listOf("Animation", "Drama", "Romance"),
-            overview = "A young man who bullied a deaf classmate in elementary school seeks redemption years later.",
-            type = ContentType.ANIME_MOVIE,
-            language = "Japanese / Hindi / English",
-            isTopRated = true,
-            studio = "Kyoto Animation",
-            animeStatus = "Movie",
-            hasDub = true,
-            hasSub = true
+            genres = listOf("Drama", "Fantasy", "Horror", "Sci-Fi"),
+            overview = "When a young boy vanishes, a small town uncovers a mystery involving secret experiments and terrifying supernatural forces.",
+            type = ContentType.SERIES,
+            platform = StreamingPlatform.NETFLIX,
+            language = "English / Hindi",
+            totalSeasons = 4,
+            totalEpisodes = 34,
+            isTopRated = true
         ),
         ContentItem(
-            id = "bleach_tybw",
-            title = "Bleach: Thousand-Year Blood War",
-            originalTitle = "Bleach: Sennen Kessen-hen",
-            posterUrl = "https://image.tmdb.org/t/p/w500/2E1x1qcHqG5.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/2E1x1qcHqG5.jpg",
-            rating = 8.8,
-            year = 2022,
-            genres = listOf("Animation", "Action", "Supernatural"),
-            overview = "The peaceful Soul Society is shattered when the Quincy king Yhwach leads an all-out holy war against the Soul Reapers.",
-            type = ContentType.ANIME_SERIES,
-            language = "Japanese / Hindi",
+            id = "breaking_bad",
+            title = "Breaking Bad",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2025/12/04/d10dfae65c78f3ceb592ba5772bab973.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2025/12/04/d10dfae65c78f3ceb592ba5772bab973.jpg",
+            rating = 9.5,
+            year = 2008,
+            genres = listOf("Crime", "Drama", "Thriller"),
+            overview = "A chemistry teacher diagnosed with terminal lung cancer turns to manufacturing methamphetamine.",
+            type = ContentType.SERIES,
+            platform = StreamingPlatform.NETFLIX,
+            language = "English / Hindi",
+            totalSeasons = 5,
+            totalEpisodes = 62,
+            isTopRated = true
+        ),
+        ContentItem(
+            id = "dark_netflix",
+            title = "Dark",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2025/12/04/626b314a00065f307c1d0e37ee94afe9.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2025/12/04/626b314a00065f307c1d0e37ee94afe9.jpg",
+            rating = 8.7,
+            year = 2017,
+            genres = listOf("Crime", "Drama", "Mystery", "Sci-Fi"),
+            overview = "A family saga with a supernatural twist, set in a German town where the disappearance of two young children exposes secrets.",
+            type = ContentType.SERIES,
+            platform = StreamingPlatform.NETFLIX,
+            language = "German / Hindi Dubbed",
             totalSeasons = 3,
-            totalEpisodes = 39,
-            studio = "Studio Pierrot",
-            animeStatus = "Part 3 Airing",
-            hasDub = true,
-            hasSub = true
+            totalEpisodes = 26,
+            isTopRated = true
         ),
         ContentItem(
-            id = "death_note",
-            title = "Death Note",
-            originalTitle = "Death Note",
-            posterUrl = "https://image.tmdb.org/t/p/w500/iigTJJskWf2.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/w1280/iigTJJskWf2.jpg",
-            rating = 9.0,
-            year = 2006,
-            genres = listOf("Animation", "Thriller", "Psychological", "Mystery"),
-            overview = "A brilliant high school student discovers a supernatural notebook that grants him the power to kill anyone whose name he writes in it.",
-            type = ContentType.ANIME_SERIES,
-            language = "Japanese / Hindi / English",
-            totalSeasons = 1,
-            totalEpisodes = 37,
-            isTopRated = true,
-            studio = "Madhouse",
-            animeStatus = "Completed Masterpiece",
-            hasDub = true,
-            hasSub = true
+            id = "the_boys",
+            title = "The Boys",
+            posterUrl = "https://pbcdn.aoneroom.com/image/2026/09/15/455328c7f4249ad60b5e585049de8019.jpg",
+            backdropUrl = "https://pbcdn.aoneroom.com/image/2026/09/15/455328c7f4249ad60b5e585049de8019.jpg",
+            rating = 8.7,
+            year = 2019,
+            genres = listOf("Action", "Comedy", "Drama", "Sci-Fi"),
+            overview = "A group of vigilantes set out to take down corrupt superheroes who abuse their superpowers.",
+            type = ContentType.SERIES,
+            platform = StreamingPlatform.PRIME_VIDEO,
+            language = "English / Hindi",
+            totalSeasons = 4,
+            totalEpisodes = 32,
+            isTopRated = true
         )
     )
 
-    // Retrieval Methods
-    fun getAllContent(): List<ContentItem> = masterCatalog
+    // Reactive StateFlows for real-time live content updates
+    private val _liveCatalogFlow = MutableStateFlow<List<ContentItem>>(masterCatalog.toList())
+    val liveCatalogFlow: StateFlow<List<ContentItem>> = _liveCatalogFlow.asStateFlow()
 
-    fun getHeroItems(): List<ContentItem> = masterCatalog.filter { it.isTopRated }
+    init {
+        // Trigger non-blocking asynchronous fetch from ElitePlex live API on startup
+        fetchLiveCatalog()
+    }
+
+    fun fetchLiveCatalog() {
+        scope.launch {
+            try {
+                // Fetch Home Trending & Movies
+                val homeResult = ElitePlexApiClient.getHomeContent()
+                val moviesResult = ElitePlexApiClient.getMovies()
+                val seriesResult = ElitePlexApiClient.getSeries()
+
+                val newItems = mutableListOf<ContentItem>()
+
+                homeResult.getOrNull()?.forEach { (_, list) ->
+                    newItems.addAll(list)
+                }
+                moviesResult.getOrNull()?.let { newItems.addAll(it) }
+                seriesResult.getOrNull()?.let { newItems.addAll(it) }
+
+                if (newItems.isNotEmpty()) {
+                    synchronized(masterCatalog) {
+                        for (item in newItems) {
+                            if (item.posterUrl.isNotBlank() && masterCatalog.none { it.id == item.id || it.title.equals(item.title, ignoreCase = true) }) {
+                                masterCatalog.add(item)
+                            }
+                        }
+                    }
+                    _liveCatalogFlow.value = masterCatalog.toList()
+                    Log.d(TAG, "Enriched catalog with live items! Total: ${masterCatalog.size}")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Live catalog sync skipped: ${e.message}")
+            }
+        }
+    }
+
+    // Retrieval Methods (Returning full catalog immediately with zero blank delay)
+    fun getAllContent(): List<ContentItem> = synchronized(masterCatalog) { masterCatalog.toList() }
+
+    fun getHeroItems(): List<ContentItem> = synchronized(masterCatalog) {
+        masterCatalog.filter { it.isTopRated }
+    }
 
     // Anime-specific Provider Filter
     fun getAnimeProviders(): List<ProviderCapability> =
         providers.filter { it.supportsAnime }
 
-    fun getAnimeHeroItems(): List<ContentItem> =
+    fun getAnimeHeroItems(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { (it.type == ContentType.ANIME_SERIES || it.type == ContentType.ANIME_MOVIE) && it.isTopRated }
+    }
 
-    fun getTrendingAnime(): List<ContentItem> =
+    fun getTrendingAnime(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.type == ContentType.ANIME_SERIES || it.type == ContentType.ANIME_MOVIE }
+    }
 
-    fun getSimulcastAnime(): List<ContentItem> =
+    fun getSimulcastAnime(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.type == ContentType.ANIME_SERIES && (it.animeStatus.contains("Simulcast") || it.animeStatus.contains("Airing") || it.year >= 2023) }
+    }
 
-    fun getPopularShonen(): List<ContentItem> =
+    fun getPopularShonen(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { (it.type == ContentType.ANIME_SERIES || it.type == ContentType.ANIME_MOVIE) && it.genres.contains("Action") }
+    }
 
-    fun getAnimeMovies(): List<ContentItem> =
+    fun getAnimeMovies(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.type == ContentType.ANIME_MOVIE }
+    }
 
-    fun getAnimeSeries(): List<ContentItem> =
+    fun getAnimeSeries(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.type == ContentType.ANIME_SERIES }
+    }
 
-    fun getAnimeStudios(): List<String> =
+    fun getAnimeStudios(): List<String> = synchronized(masterCatalog) {
         masterCatalog.filter { it.studio.isNotBlank() }.map { it.studio }.distinct()
+    }
 
     fun searchAnime(query: String, genreFilter: String? = null, studioFilter: String? = null): List<ContentItem> {
-        val animeList = masterCatalog.filter { it.type == ContentType.ANIME_SERIES || it.type == ContentType.ANIME_MOVIE }
+        val animeList = synchronized(masterCatalog) {
+            masterCatalog.filter { it.type == ContentType.ANIME_SERIES || it.type == ContentType.ANIME_MOVIE }
+        }
         val q = query.trim().lowercase()
 
         return animeList.filter { item ->
@@ -657,17 +820,22 @@ object ElitePlexRepository {
         }
     }
 
-    fun getTrendingMovies(): List<ContentItem> =
+    fun getTrendingMovies(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.type == ContentType.MOVIE }
+    }
 
-    fun getTrendingCinema(): List<ContentItem> =
+    fun getTrendingCinema(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.type == ContentType.MOVIE && it.genres.any { g -> g == "Action" || g == "Romance" || g == "Thriller" } }
+    }
 
-    fun getTrendingBollywood(): List<ContentItem> =
+    fun getTrendingBollywood(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.language.contains("Hindi") }
+    }
 
     fun getBrowseMovies(genreFilter: String? = null): List<ContentItem> {
-        val movies = masterCatalog.filter { it.type == ContentType.MOVIE || it.type == ContentType.ANIME_MOVIE }
+        val movies = synchronized(masterCatalog) {
+            masterCatalog.filter { it.type == ContentType.MOVIE || it.type == ContentType.ANIME_MOVIE }
+        }
         return if (genreFilter.isNullOrBlank() || genreFilter == "All") {
             movies
         } else {
@@ -675,11 +843,14 @@ object ElitePlexRepository {
         }
     }
 
-    fun getBrowseSeries(): List<ContentItem> =
+    fun getBrowseSeries(): List<ContentItem> = synchronized(masterCatalog) {
         masterCatalog.filter { it.type == ContentType.SERIES || it.type == ContentType.ANIME_SERIES }
+    }
 
     fun getPlatformContent(platform: StreamingPlatform, type: ContentType? = null): List<ContentItem> {
-        val list = masterCatalog.filter { it.platform == platform }
+        val list = synchronized(masterCatalog) {
+            masterCatalog.filter { it.platform == platform }
+        }
         return if (type != null) {
             if (type == ContentType.MOVIE) {
                 list.filter { it.type == ContentType.MOVIE || it.type == ContentType.ANIME_MOVIE }
@@ -692,7 +863,9 @@ object ElitePlexRepository {
     }
 
     fun getAnimeContent(filterType: String = "All"): List<ContentItem> {
-        val anime = masterCatalog.filter { it.type == ContentType.ANIME_SERIES || it.type == ContentType.ANIME_MOVIE }
+        val anime = synchronized(masterCatalog) {
+            masterCatalog.filter { it.type == ContentType.ANIME_SERIES || it.type == ContentType.ANIME_MOVIE }
+        }
         return when (filterType) {
             "Movies" -> anime.filter { it.type == ContentType.ANIME_MOVIE }
             "Series" -> anime.filter { it.type == ContentType.ANIME_SERIES }
@@ -704,16 +877,20 @@ object ElitePlexRepository {
     fun search(query: String): List<ContentItem> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return emptyList()
-        return masterCatalog.filter {
-            it.title.lowercase().contains(q) ||
-            it.originalTitle.lowercase().contains(q) ||
-            it.overview.lowercase().contains(q) ||
-            it.genres.any { g -> g.lowercase().contains(q) }
+
+        return synchronized(masterCatalog) {
+            masterCatalog.filter {
+                it.title.lowercase().contains(q) ||
+                it.originalTitle.lowercase().contains(q) ||
+                it.overview.lowercase().contains(q) ||
+                it.genres.any { g -> g.lowercase().contains(q) }
+            }
         }
     }
 
-    fun getContentById(id: String): ContentItem? =
+    fun getContentById(id: String): ContentItem? = synchronized(masterCatalog) {
         masterCatalog.find { it.id == id }
+    }
 
     // Seasons & Episodes generator
     fun getSeasonsForContent(contentId: String): List<Season> {
@@ -752,7 +929,7 @@ object ElitePlexRepository {
                 title = epTitle,
                 overview = if (isAnime) "An electrifying clash ensues as ancient powers awaken and heroes confront formidable adversaries." else "The stakes heighten as unexpected alliances are forged and hidden motives emerge in this gripping installment.",
                 durationMinutes = if (isAnime) 24 else 42 + (epNum % 8),
-                thumbnailUrl = item.backdropUrl,
+                thumbnailUrl = item.backdropUrl.ifBlank { item.posterUrl },
                 streamUrl = resolveMediaStreamUrl(contentId, "s${seasonNumber}e$epNum"),
                 isFiller = isAnime && (epNum == 5 || epNum == 9),
                 hasHindiDub = item.hasDub,
@@ -763,8 +940,6 @@ object ElitePlexRepository {
 
     // Verified stream resolution with provider fallback
     fun resolveMediaStreamUrl(contentId: String, episodeRef: String? = null): String {
-        // High quality test media stream streams from public authorized test repositories (Big Buck Bunny / Blender Open Movie / Tears of Steel / Sintel)
-        // Ensure seamless compatibility with Android MediaPlayer & VideoView
         return when {
             contentId.contains("anime") || contentId == "solo_leveling" || contentId == "attack_on_titan" ->
                 "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"

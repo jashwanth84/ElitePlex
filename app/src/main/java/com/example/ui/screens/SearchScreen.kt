@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.ContentItem
 import com.example.data.model.ContentType
+import com.example.data.remote.ElitePlexApiClient
 import com.example.data.repository.ElitePlexRepository
 import com.example.ui.components.PosterCard
 
@@ -59,19 +61,33 @@ fun SearchScreen(
     var searchQuery by remember { mutableStateOf("") }
     val categories = listOf("All", "Movies", "Series", "Anime")
     var selectedCategory by remember { mutableStateOf("All") }
+    var remoteResults by remember { mutableStateOf<List<ContentItem>>(emptyList()) }
 
-    val searchResults = remember(searchQuery, selectedCategory) {
-        val list = if (searchQuery.isBlank()) {
+    LaunchedEffect(searchQuery) {
+        val trimmed = searchQuery.trim()
+        if (trimmed.length >= 2) {
+            val res = ElitePlexApiClient.searchContent(trimmed)
+            remoteResults = res.getOrDefault(emptyList())
+        } else {
+            remoteResults = emptyList()
+        }
+    }
+
+    val searchResults = remember(searchQuery, selectedCategory, remoteResults) {
+        val localList = if (searchQuery.isBlank()) {
             ElitePlexRepository.getAllContent().shuffled().take(8)
         } else {
             ElitePlexRepository.search(searchQuery)
         }
 
+        // Merge local and remote without duplicates
+        val combined = (localList + remoteResults).distinctBy { it.id }
+
         when (selectedCategory) {
-            "Movies" -> list.filter { it.type == ContentType.MOVIE || it.type == ContentType.ANIME_MOVIE }
-            "Series" -> list.filter { it.type == ContentType.SERIES || it.type == ContentType.ANIME_SERIES }
-            "Anime" -> list.filter { it.type == ContentType.ANIME_MOVIE || it.type == ContentType.ANIME_SERIES }
-            else -> list
+            "Movies" -> combined.filter { it.type == ContentType.MOVIE || it.type == ContentType.ANIME_MOVIE }
+            "Series" -> combined.filter { it.type == ContentType.SERIES || it.type == ContentType.ANIME_SERIES }
+            "Anime" -> combined.filter { it.type == ContentType.ANIME_MOVIE || it.type == ContentType.ANIME_SERIES }
+            else -> combined
         }
     }
 

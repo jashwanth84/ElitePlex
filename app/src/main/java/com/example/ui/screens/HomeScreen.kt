@@ -18,6 +18,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,10 +47,11 @@ fun HomeScreen(
     continueWatchingList: List<Pair<ContentItem, PlaybackProgress>>,
     modifier: Modifier = Modifier
 ) {
-    val heroItems = ElitePlexRepository.getHeroItems()
-    val trendingMovies = ElitePlexRepository.getTrendingMovies()
-    val cinemaMovies = ElitePlexRepository.getTrendingCinema()
-    val bollywoodMovies = ElitePlexRepository.getTrendingBollywood()
+    val liveCatalog by ElitePlexRepository.liveCatalogFlow.collectAsState()
+    val heroItems = remember(liveCatalog) { ElitePlexRepository.getHeroItems() }
+    val trendingMovies = remember(liveCatalog) { ElitePlexRepository.getTrendingMovies() }
+    val cinemaMovies = remember(liveCatalog) { ElitePlexRepository.getTrendingCinema() }
+    val bollywoodMovies = remember(liveCatalog) { ElitePlexRepository.getTrendingBollywood() }
 
     LazyColumn(
         modifier = modifier
