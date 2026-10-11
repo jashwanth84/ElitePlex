@@ -85,3 +85,17 @@ app/src/main/java/com/example/
         ├── WatchlistScreen.kt     # Saved items grid from SQLite database
         └── SettingsScreen.kt      # Quality, subtitle styling & CDN registry status
 ```
+
+---
+
+## 🚀 GitHub Actions Workflows & APK Releases
+
+ElitePlex includes automated CI/CD workflows under `.github/workflows/`:
+
+- **`.github/workflows/release-apk.yml`**: Automatically builds, tests, signs, and publishes Release & Debug APKs when pushing a version tag (e.g. `git tag v1.0.0 && git push origin v1.0.0`) or when triggered manually via GitHub Actions **Run workflow**. Generates SHA-256 checksums and attaches assets to GitHub Releases.
+- **`.github/workflows/android-ci.yml`**: Automatically runs unit & Robolectric tests on pull requests and pushes to `main`.
+
+For full details on configuring production release keys and triggering manual builds, see [GITHUB_WORKFLOWS.md](GITHUB_WORKFLOWS.md).
+
+For root-cause analysis and verification of the artwork rendering fixes, see [IMAGE_LOADING_FIX.md](IMAGE_LOADING_FIX.md).
+

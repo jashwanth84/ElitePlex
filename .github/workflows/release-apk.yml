@@ -1,0 +1,186 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Release version name (e.g. 1.0.0 or v1.0.0)'
+        required: false
+        default: '1.0.0'
+      release_title:
+        description: 'Release title'
+        required: false
+        default: 'ElitePlex Release'
+      release_notes:
+        description: 'Release notes or changelog'
+        required: false
+        default: 'ElitePlex Android Application Release APK with Movies, Web Series, and Anime streaming support.'
+      is_draft:
+        description: 'Create draft release'
+        type: boolean
+        required: false
+        default: false
+      is_prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
+
+      - name: Prepare Environment Files
+        run: |
+          # Ensure .env exists for the Secrets Gradle Plugin
+          if [ ! -f .env ]; then
+            cp .env.example .env || touch .env
+          fi
+
+      - name: Configure Release Signing Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/keystore"
+          KEYSTORE_FILE="${RUNNER_TEMP}/keystore/release-upload.jks"
+
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using release keystore provided via GitHub Secrets (KEYSTORE_BASE64)..."
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
+            echo "KEYSTORE_PATH=$KEYSTORE_FILE" >> $GITHUB_ENV
+            echo "STORE_PASSWORD=${STORE_PASSWORD}" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=${KEY_PASSWORD}" >> $GITHUB_ENV
+          elif [ -f "my-upload-key.jks" ]; then
+            echo "Using root my-upload-key.jks..."
+            echo "KEYSTORE_PATH=$(pwd)/my-upload-key.jks" >> $GITHUB_ENV
+            echo "STORE_PASSWORD=${STORE_PASSWORD:-android}" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=${KEY_PASSWORD:-android}" >> $GITHUB_ENV
+          else
+            echo "No custom keystore secret detected; generating a secure automated signing key for release..."
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE_FILE" \
+              -alias "upload" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "android" \
+              -keypass "android" \
+              -dname "CN=ElitePlex, OU=Mobile, O=ElitePlex, L=San Francisco, S=CA, C=US"
+
+            echo "KEYSTORE_PATH=$KEYSTORE_FILE" >> $GITHUB_ENV
+            echo "STORE_PASSWORD=android" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=android" >> $GITHUB_ENV
+          fi
+
+      - name: Run Unit & Robolectric Tests
+        run: |
+          gradle :app:testDebugUnitTest --no-daemon
+
+      - name: Build Release and Debug APKs
+        run: |
+          gradle :app:assembleRelease :app:assembleDebug --no-daemon
+
+      - name: Determine Version Name and Tag
+        id: versioning
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            INPUT_VER="${{ github.event.inputs.version_name }}"
+            # Strip leading 'v' if present for clean naming
+            CLEAN_VER="${INPUT_VER#v}"
+            TAG_NAME="v${CLEAN_VER}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            REF_TAG="${GITHUB_REF#refs/tags/}"
+            CLEAN_VER="${REF_TAG#v}"
+            TAG_NAME="$REF_TAG"
+          else
+            CLEAN_VER="1.0.0-${GITHUB_SHA::7}"
+            TAG_NAME="v${CLEAN_VER}"
+          fi
+
+          echo "version=$CLEAN_VER" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Package and Rename APK Artifacts
+        run: |
+          mkdir -p release-artifacts
+          VER="${{ steps.versioning.outputs.version }}"
+
+          # Locate built APKs
+          RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" 2>/dev/null | head -n 1)
+          DEBUG_APK=$(find app/build/outputs/apk/debug -name "*.apk" 2>/dev/null | head -n 1)
+
+          if [ -f "$RELEASE_APK" ]; then
+            cp "$RELEASE_APK" "release-artifacts/ElitePlex-v${VER}-release.apk"
+            echo "Copied Release APK: ElitePlex-v${VER}-release.apk"
+          fi
+
+          if [ -f "$DEBUG_APK" ]; then
+            cp "$DEBUG_APK" "release-artifacts/ElitePlex-v${VER}-debug.apk"
+            echo "Copied Debug APK: ElitePlex-v${VER}-debug.apk"
+          fi
+
+          # Generate SHA-256 Checksums
+          cd release-artifacts
+          sha256sum ElitePlex-*.apk > "ElitePlex-v${VER}-checksums.sha256"
+          cat "ElitePlex-v${VER}-checksums.sha256"
+          cd ..
+
+      - name: Upload APKs as Workflow Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElitePlex-APKs-${{ steps.versioning.outputs.version }}
+          path: release-artifacts/*
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ steps.versioning.outputs.tag }}
+          name: ${{ github.event.inputs.release_title || steps.versioning.outputs.tag }}
+          body: |
+            ## ElitePlex Android Application Release (${{ steps.versioning.outputs.tag }})
+
+            ### What's Included:
+            - **Anime Hub**: Full anime streaming module with seasons, episodes, and multi-source playback.
+            - **Movies & Web Series**: Verified high-resolution artwork, cinematic hero carousel, and multi-audio stream providers.
+            - **Watchlist & Continue Watching**: Persistent local storage with resume progress.
+            - **Artwork & Metadata Normalization**: Robust relative/absolute URL resolution and TMDB/CDN integration.
+
+            ### Downloads:
+            - `ElitePlex-v${{ steps.versioning.outputs.version }}-release.apk` (Signed Release APK)
+            - `ElitePlex-v${{ steps.versioning.outputs.version }}-debug.apk` (Development Debug APK)
+            - `ElitePlex-v${{ steps.versioning.outputs.version }}-checksums.sha256` (SHA-256 verification hashes)
+
+            ${{ github.event.inputs.release_notes }}
+          draft: ${{ github.event.inputs.is_draft == 'true' }}
+          prerelease: ${{ github.event.inputs.is_prerelease == 'true' }}
+          files: |
+            release-artifacts/*.apk
+            release-artifacts/*.sha256
