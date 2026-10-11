@@ -1,0 +1,6 @@
+{
+  "name": "ElitePlex",
+  "description": "Dark cinematic streaming platform for Movies, Web Series, and Anime with multi-provider discovery and playback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
