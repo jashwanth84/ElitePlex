@@ -54,9 +54,17 @@ jobs:
         with:
           cache-read-only: false
 
+      - name: Ensure Gradle wrapper exists
+        shell: bash
+        run: |
+          if [ ! -f ./gradlew ]; then
+            echo "Missing gradlew. Generating it in CI..."
+            gradle wrapper --gradle-version 8.7
+          fi
+          chmod +x ./gradlew
+
       - name: Prepare Environment Files
         run: |
-          # Ensure .env exists for the Secrets Gradle Plugin
           if [ ! -f .env ]; then
             cp .env.example .env || touch .env
           fi
@@ -70,7 +78,6 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/keystore"
           KEYSTORE_FILE="${RUNNER_TEMP}/keystore/release-upload.jks"
 
-          # Release keystore
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Using release keystore provided via GitHub Secrets (KEYSTORE_BASE64)..."
             echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
@@ -99,7 +106,6 @@ jobs:
             echo "KEY_PASSWORD=android" >> $GITHUB_ENV
           fi
 
-          # Debug keystore required for :app:validateSigningDebug when building debug APK
           DEBUG_KEYSTORE="$HOME/.android/debug.keystore"
           mkdir -p "$HOME/.android"
 
@@ -181,18 +187,18 @@ jobs:
           name: ${{ github.event.inputs.release_title || steps.versioning.outputs.tag }}
           body: |
             ## ElitePlex Android Application Release (${{ steps.versioning.outputs.tag }})
-
+            
             ### What's Included:
             - **Anime Hub**: Full anime streaming module with seasons, episodes, and multi-source playback.
             - **Movies & Web Series**: Verified high-resolution artwork, cinematic hero carousel, and multi-audio stream providers.
             - **Watchlist & Continue Watching**: Persistent local storage with resume progress.
             - **Artwork & Metadata Normalization**: Robust relative/absolute URL resolution and TMDB/CDN integration.
-
+            
             ### Downloads:
             - `ElitePlex-v${{ steps.versioning.outputs.version }}-release.apk` (Signed Release APK)
             - `ElitePlex-v${{ steps.versioning.outputs.version }}-debug.apk` (Development Debug APK)
             - `ElitePlex-v${{ steps.versioning.outputs.version }}-checksums.sha256` (SHA-256 verification hashes)
-
+            
             ${{ github.event.inputs.release_notes }}
           draft: ${{ github.event.inputs.is_draft == 'true' }}
           prerelease: ${{ github.event.inputs.is_prerelease == 'true' }}
