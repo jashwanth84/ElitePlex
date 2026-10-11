@@ -61,7 +61,7 @@ jobs:
             cp .env.example .env || touch .env
           fi
 
-      - name: Configure Release Signing Keystore
+      - name: Configure Signing Keystores
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
@@ -70,6 +70,7 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/keystore"
           KEYSTORE_FILE="${RUNNER_TEMP}/keystore/release-upload.jks"
 
+          # Release keystore
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Using release keystore provided via GitHub Secrets (KEYSTORE_BASE64)..."
             echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
@@ -98,20 +99,36 @@ jobs:
             echo "KEY_PASSWORD=android" >> $GITHUB_ENV
           fi
 
+          # Debug keystore required for :app:validateSigningDebug when building debug APK
+          DEBUG_KEYSTORE="$HOME/.android/debug.keystore"
+          mkdir -p "$HOME/.android"
+
+          if [ ! -f "$DEBUG_KEYSTORE" ]; then
+            echo "Generating Android debug keystore..."
+            keytool -genkeypair -v \
+              -keystore "$DEBUG_KEYSTORE" \
+              -alias "androiddebugkey" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "android" \
+              -keypass "android" \
+              -dname "CN=Android Debug, OU=Android, O=Android, L=Mountain View, S=CA, C=US"
+          fi
+
       - name: Run Unit & Robolectric Tests
         run: |
-          gradle :app:testDebugUnitTest --no-daemon
+          ./gradlew :app:testDebugUnitTest --no-daemon
 
       - name: Build Release and Debug APKs
         run: |
-          gradle :app:assembleRelease :app:assembleDebug --no-daemon
+          ./gradlew :app:assembleRelease :app:assembleDebug --no-daemon
 
       - name: Determine Version Name and Tag
         id: versioning
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             INPUT_VER="${{ github.event.inputs.version_name }}"
-            # Strip leading 'v' if present for clean naming
             CLEAN_VER="${INPUT_VER#v}"
             TAG_NAME="v${CLEAN_VER}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
@@ -131,7 +148,6 @@ jobs:
           mkdir -p release-artifacts
           VER="${{ steps.versioning.outputs.version }}"
 
-          # Locate built APKs
           RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" 2>/dev/null | head -n 1)
           DEBUG_APK=$(find app/build/outputs/apk/debug -name "*.apk" 2>/dev/null | head -n 1)
 
@@ -145,7 +161,6 @@ jobs:
             echo "Copied Debug APK: ElitePlex-v${VER}-debug.apk"
           fi
 
-          # Generate SHA-256 Checksums
           cd release-artifacts
           sha256sum ElitePlex-*.apk > "ElitePlex-v${VER}-checksums.sha256"
           cat "ElitePlex-v${VER}-checksums.sha256"
